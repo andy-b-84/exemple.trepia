@@ -20,7 +20,6 @@ app/config/parameters.yml
 composer.phar
 
 ## Netbeans
-
 nbproject/private/
 build/
 nbbuild/
