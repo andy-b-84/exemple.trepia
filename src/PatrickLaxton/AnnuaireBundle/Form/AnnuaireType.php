@@ -18,9 +18,7 @@ class AnnuaireType extends AbstractType {
      * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options) {
-        $builder
-                ->add(self::INPUT_NAME)
-        ;
+        $builder->add(self::INPUT_NAME, 'file');
     }
 
     /**
@@ -28,7 +26,7 @@ class AnnuaireType extends AbstractType {
      */
     public function setDefaultOptions(OptionsResolverInterface $resolver) {
         $resolver->setDefaults(array(
-            'data_class' => 'PatrickLaxton\AnnuaireBundle\Entity\File'
+            'data_class' => 'PatrickLaxton\AnnuaireBundle\Entity\Annuaire'
         ));
     }
 

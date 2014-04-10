@@ -15,6 +15,18 @@ class Importer {
      * @var string
      */
     const UPLOAD_DIR = '/tmp';
+    /**
+     * File in which progress is logged
+     * 
+     * @var string
+     */
+    const PROGRESS_FILENAME = '/tmp/progress';
+    /**
+     * File in which reports are logged
+     * 
+     * @var string
+     */
+    const REPORT_FILENAME = '/tmp/report';
 
     /**
      * @var Doctrine\ORM\EntityManager
@@ -48,8 +60,8 @@ class Importer {
      * @return boolean
      */
     public function import($filename) {
-        $rootDirname = dirname(__DIR__ . '/../../../../');
-        $cmd = "/usr/bin/php $rootDirname/app/console $filename";
+        $rootDirname = realpath ( dirname(__DIR__ . '/../../../../../') );
+        $cmd = "/usr/bin/php $rootDirname/app/console annuaire:import $filename";
 
         $output = array();
         $return_var = 0;
@@ -60,7 +72,7 @@ class Importer {
           pclose(popen("start /B ". $cmd, "r"));
           }
           else { */ // For Linux/BSD :
-        exec($cmd . " > /dev/null &", $output, $return_var);
+        $return = exec($cmd . " > /dev/null &", $output, $return_var);
         //}
 
         $this->logger->addDebug (
@@ -80,24 +92,82 @@ class Importer {
      * @return boolean
      */
     public function import_background($filename) {
-        $start = ceil(microtime(true)*100)/100;
+        /**
+         * @var float start time
+         */
+        $start = microtime(true);
         
-        $handle = fopen($filename, 'r');
-        while ($line = fgetcsv($handle)) {
+        /**
+         * @var int percentage
+         */
+        $progress = 0;
+        file_put_contents ( self::PROGRESS_FILENAME, $progress );
+        
+        $linesCmd = "wc -l $filename";
+        $output = array();
+        exec ( $linesCmd, $output );
+        $output = explode ( ' ', $output[0] );
+        /**
+         * @var int number of lines in the processed file
+         */
+        $lines = intval ( $output[0] );
+        
+        $handle = fopen ( $filename, 'r' );
+        $line_number = 0;
+        while ( $line = fgetcsv ( $handle ) ) {
             $personne = new Personne();
-            $personne->setNom($line[0])
-                    ->setPrenom($line[1])
-                    ->setTelephone($line[2]);
-            $this->em->persist($personne);
+            $personne->setNom ( $line[0] )
+                    ->setPrenom ( $line[1] )
+                    ->setTelephone ( $line[2] );
+            $this->em->persist ( $personne );
             $this->em->flush();
+            $current_progress = floor ( ( $line_number / $lines ) * 100 );
+            if ( $current_progress > $progress ) {
+                $progress = $current_progress;
+                file_put_contents ( self::PROGRESS_FILENAME, $progress );
+            }
+            $line_number++;
         }
         fclose($handle);
         
-        $end = ceil(microtime(true)*100)/100;
+        $progress = 100;
+        file_put_contents ( self::PROGRESS_FILENAME, $progress );
         
-        $delta = $end - $start;
+        /**
+         * @var float end time
+         */
+        $end = microtime(true);
+        
+        /**
+         * @var float total time spent
+         */
+        $delta = sprintf ( '%0.2f', $end - $start );
+        
+        $report = <<<REPORT
+File $filename processed succesfully.
+$lines records created in $delta seconds.
+REPORT;
+        
+        file_put_contents ( self::REPORT_FILENAME, $report );
         
         return true;
     }
+    
+    /**
+     * Returns the progress
+     * 
+     * @return string
+     */
+    public function getProgress() {
+        return file_get_contents ( self::PROGRESS_FILENAME );
+    }
 
+    /**
+     * Returns the report written in the end of the CSV file provessing
+     * 
+     * @return string
+     */
+    public function getReport() {
+        return file_get_contents ( self::REPORT_FILENAME );
+    }
 }

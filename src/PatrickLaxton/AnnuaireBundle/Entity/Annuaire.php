@@ -10,21 +10,21 @@ class Annuaire {
     /**
      * @var string
      */
-    private $file;
+    private $filename;
 
     /**
      * @return string
      */
-    public function getFile() {
-        return $this->file;
+    public function getFilename() {
+        return $this->filename;
     }
 
     /**
-     * @param string $file
+     * @param string $filename
      * @return \PatrickLaxton\AnnuaireBundle\Entity\Annuaire
      */
-    public function setFile($file) {
-        $this->file = $file;
+    public function setFilename($filename) {
+        $this->filename = $filename;
         return $this;
     }
 }

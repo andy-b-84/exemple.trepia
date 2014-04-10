@@ -44,7 +44,7 @@ class ImportCommand extends ContainerAwareCommand {
             if ( !$this->getImporter()->import_background ( $filename ) ) {
                 $text = 'Error while processing file ' . $filename . '. Check logs for error messages.';
             } else {
-                $text = 'Processing file ' . $filename . ' now.';
+                $text = 'Processed file ' . $filename . ' now.';
             }
         }
 

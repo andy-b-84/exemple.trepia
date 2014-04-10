@@ -98,6 +98,137 @@ class PersonneController extends Controller {
     }
 
     /**
+     * Creates a form to edit a Personne entity.
+     *
+     * @param Personne $entity The entity
+     *
+     * @return \Symfony\Component\Form\Form The form
+     */
+    private function createEditForm(Personne $entity) {
+        $form = $this->createForm(new PersonneType(), $entity, array(
+            'action' => $this->generateUrl('personne_update', array('id' => $entity->getId())),
+            'method' => 'PUT',
+        ));
+
+        $form->add('submit', 'submit', array('label' => 'Update'));
+
+        return $form;
+    }
+
+    /**
+     * Creates a form to delete a Personne entity by id.
+     *
+     * @param mixed $id The entity id
+     *
+     * @return \Symfony\Component\Form\Form The form
+     */
+    private function createDeleteForm($id) {
+        return $this->createFormBuilder()
+                        ->setAction($this->generateUrl('personne_delete', array('id' => $id)))
+                        ->setMethod('DELETE')
+                        ->add('submit', 'submit', array('label' => 'Delete'))
+                        ->getForm()
+        ;
+    }
+
+    /**
+     * Displays a form to import a csv file with Personne entities inside it.
+     *
+     * @Route("/import", name="personne_import")
+     * @Method("GET")
+     * @Template("PatrickLaxtonAnnuaireBundle:Personne:import.html.twig")
+     */
+    public function importAction() {
+        $importForm = $this->createImportForm();
+
+        return array(
+            'import_form' => $importForm->createView(),
+        );
+    }
+
+    /**
+     * Creates a form to import a csv file with Personne entities inside it.
+     * 
+     * @param \PatrickLaxton\AnnuaireBundle\Entity\Annuaire $annuaire
+     *
+     * @return \Symfony\Component\Form\Form The form
+     */
+    private function createImportForm($annuaire = null)
+    {
+        $form = $this->createForm(new AnnuaireType(), $annuaire, array(
+            'action' => $this->generateUrl('personne_import_file'),
+            'method' => 'PUT',
+        ));
+
+        $form->add('submit', 'submit', array('label' => 'Import'));
+
+        return $form;
+    }
+    
+    /**
+     * @return \PatrickLaxton\AnnuaireBundle\Service\Importer
+     */
+    private function getImporter() {
+        return $this->get('patrick_laxton_annuaire.importer');
+    }
+    
+    /**
+     * Imports the file uploaded by the previous action.
+     *
+     * @Route("/importfile", name="personne_import_file")
+     * @Method("PUT")
+     * @Template("PatrickLaxtonAnnuaireBundle:Personne:import.file.html.twig")
+     */
+    public function importFileAction(Request $request) {
+        $entity = new \PatrickLaxton\AnnuaireBundle\Entity\Annuaire();
+
+        $importForm = $this->createImportForm($entity);
+        $importForm->handleRequest($request);
+
+        if ( $importForm->isValid() ) {
+            $dir = Importer::UPLOAD_DIR;
+            $filename = $this->getImporter()->getFilename();
+            
+            $importForm[AnnuaireType::INPUT_NAME]->getData()->move ( $dir,$filename );
+            
+            $this->getImporter()->import ( "$dir/$filename" );
+
+            return array (
+                'importprogress' => $this->generateUrl ( 'personne_import_progress' ),
+                'importloaded'   => $this->generateUrl ( 'personne_import_loaded' )
+            );
+        }
+
+        return $this->redirect ( $this->generateUrl('personne_import') );
+    }
+    
+    /**
+     * AJAX action called to know how many lines have been processed (%)
+     *
+     * @Route("/importprogress", name="personne_import_progress")
+     * @Method("GET")
+     * @Template("PatrickLaxtonAnnuaireBundle:Personne:import.progress.html.twig")
+     */
+    public function importProgressAction() {
+        return array (
+            'progress' => $this->getImporter()->getProgress(),
+        );
+    }
+    
+    /**
+     * Shows the report after a succesful import
+     *
+     * @Route("/importloaded", name="personne_import_loaded")
+     * @Method("GET")
+     * @Template("PatrickLaxtonAnnuaireBundle:Personne:import.loaded.html.twig")
+     */
+    public function importLoadedAction() {
+        return array (
+            'report' => $this->getImporter()->getReport(),
+        );
+    }
+    
+    /**
      * Finds and displays a Personne entity.
      *
      * @Route("/{id}", name="personne_show")
@@ -120,51 +251,7 @@ class PersonneController extends Controller {
             'delete_form' => $deleteForm->createView(),
         );
     }
-
-    /**
-     * Displays a form to edit an existing Personne entity.
-     *
-     * @Route("/{id}/edit", name="personne_edit")
-     * @Method("GET")
-     * @Template()
-     */
-    public function editAction($id) {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('PatrickLaxtonAnnuaireBundle:Personne')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Personne entity.');
-        }
-
-        $editForm = $this->createEditForm($entity);
-        $deleteForm = $this->createDeleteForm($id);
-
-        return array(
-            'entity' => $entity,
-            'edit_form' => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-
-    /**
-     * Creates a form to edit a Personne entity.
-     *
-     * @param Personne $entity The entity
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createEditForm(Personne $entity) {
-        $form = $this->createForm(new PersonneType(), $entity, array(
-            'action' => $this->generateUrl('personne_update', array('id' => $entity->getId())),
-            'method' => 'PUT',
-        ));
-
-        $form->add('submit', 'submit', array('label' => 'Update'));
-
-        return $form;
-    }
-
+    
     /**
      * Edits an existing Personne entity.
      *
@@ -222,91 +309,30 @@ class PersonneController extends Controller {
 
         return $this->redirect($this->generateUrl('personne'));
     }
-
+    
     /**
-     * Creates a form to delete a Personne entity by id.
+     * Displays a form to edit an existing Personne entity.
      *
-     * @param mixed $id The entity id
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createDeleteForm($id) {
-        return $this->createFormBuilder()
-                        ->setAction($this->generateUrl('personne_delete', array('id' => $id)))
-                        ->setMethod('DELETE')
-                        ->add('submit', 'submit', array('label' => 'Delete'))
-                        ->getForm()
-        ;
-    }
-
-    /**
-     * Displays a form to import a csv file with Personne entities inside it.
-     *
-     * @Route("/{id}/import", name="personne_import")
+     * @Route("/{id}/edit", name="personne_edit")
      * @Method("GET")
-     * @Template("PatrickLaxtonAnnuaireBundle:Personne:import.html.twig")
+     * @Template()
      */
-    public function importAction() {
-        $importForm = $this->createImportForm();
+    public function editAction($id) {
+        $em = $this->getDoctrine()->getManager();
 
-        return array(
-            'import_form' => $importForm->createView(),
-        );
-    }
+        $entity = $em->getRepository('PatrickLaxtonAnnuaireBundle:Personne')->find($id);
 
-    /**
-     * Creates a form to import a csv file with Personne entities inside it.
-     * 
-     * @param \PatrickLaxton\AnnuaireBundle\Entity\Annuaire $annuaire
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createImportForm($annuaire = null)
-    {
-        $form = $this->createForm(new AnnuaireType(), $entity, array(
-            'action' => $this->generateUrl('personne_import_file'),
-            'method' => 'PUT',
-        ));
-
-        $form->add('submit', 'submit', array('label' => 'Update'));
-
-        return $form;
-    }
-    
-    /**
-     * @return \PatrickLaxton\AnnuaireBundle\Service\Importer
-     */
-    private function getImporter() {
-        return $this->get('patrick_laxton_annuaire.importer');
-    }
-    
-    /**
-     * Imports the file uploaded by the previous action.
-     *
-     * @Route("/{id}/importfile", name="personne_import_file")
-     * @Method("PUT")
-     * @Template("PatrickLaxtonAnnuaireBundle:Personne:import.html.twig")
-     */
-    public function importFileAction(Request $request) {
-        $entity = new \PatrickLaxton\AnnuaireBundle\Entity\Annuaire();
-
-        $importForm = $this->createImportForm($entity);
-        $importForm->handleRequest($request);
-
-        if ($importForm->isValid()) {
-            $dir = Importer::UPLOAD_DIR;
-            $filename = $this->getImporter()->getFilename();
-            
-            $form[AnnuaireType::INPUT_NAME]->getData()->move ( $dir,$filename );
-            
-            $this->getImporter()->import("$dir/$filename" );
-
-            return $this->redirect($this->generateUrl('personne_import_load', array('id' => $id)));
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find Personne entity.');
         }
+
+        $editForm = $this->createEditForm($entity);
+        $deleteForm = $this->createDeleteForm($id);
 
         return array(
             'entity' => $entity,
-            'import_form' => $importForm->createView(),
+            'edit_form' => $editForm->createView(),
+            'delete_form' => $deleteForm->createView(),
         );
     }
 }

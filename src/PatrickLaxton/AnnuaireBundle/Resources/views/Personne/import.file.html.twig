@@ -1,0 +1,38 @@
+{% extends '::base.html.twig' %}
+
+{% block body -%}
+    <h1>Personne import - in progress...</h1>
+
+    <p><span id="progress">0</span>% completed.</p>
+
+        <ul class="record_actions">
+    <li>
+        <a href="{{ path('personne') }}">
+            Back to the list
+        </a>
+    </li>
+</ul>
+{% endblock %}
+
+{% block javascripts %}
+<script type="text/javascript" src="{{ asset('bundles/patricklaxtonannuaire/js/jquery.min.js') }}"></script>
+<script type="text/javascript">
+(function($){
+    $(document).ready(function(){
+        var loading = window.setInterval(getprogress, 5000);
+        
+        function getprogress() {
+            $.ajax ({
+                url: '{{importprogress}}'
+            }).done(function(data) {
+                $('span#progress').html( data );
+                if ( '100' == data ) {
+                    window.clearInterval(loading);
+                    window.location.href = '{{ importloaded }}';
+                }
+            });
+        }
+    });
+}(jQuery));
+</script>
+{% endblock %}

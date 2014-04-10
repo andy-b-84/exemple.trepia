@@ -3,6 +3,8 @@
 {% block body -%}
     <h1>Personne list</h1>
 
+    {{ block('header_footer') }}
+    
     <table class="records_list">
         <thead>
             <tr>
@@ -14,32 +16,41 @@
             </tr>
         </thead>
         <tbody>
-        {% for entity in entities %}
-            <tr>
-                <td><a href="{{ path('personne_show', { 'id': entity.id }) }}">{{ entity.id }}</a></td>
-                <td>{{ entity.nom }}</td>
-                <td>{{ entity.prenom }}</td>
-                <td>{{ entity.telephone }}</td>
-                <td>
-                <ul>
-                    <li>
-                        <a href="{{ path('personne_show', { 'id': entity.id }) }}">show</a>
-                    </li>
-                    <li>
-                        <a href="{{ path('personne_edit', { 'id': entity.id }) }}">edit</a>
-                    </li>
-                </ul>
-                </td>
-            </tr>
-        {% endfor %}
+            {% for entity in entities %}
+                <tr>
+                    <td><a href="{{ path('personne_show', { 'id': entity.id }) }}">{{ entity.id }}</a></td>
+                    <td>{{ entity.nom }}</td>
+                    <td>{{ entity.prenom }}</td>
+                    <td>{{ entity.telephone }}</td>
+                    <td>
+                        <ul>
+                            <li>
+                                <a href="{{ path('personne_show', { 'id': entity.id }) }}">show</a>
+                            </li>
+                            <li>
+                                <a href="{{ path('personne_edit', { 'id': entity.id }) }}">edit</a>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+            {% endfor %}
         </tbody>
     </table>
 
-        <ul>
+    {{ block('header_footer') }}
+{% endblock %}
+
+{% block header_footer %}
+    <ul>
         <li>
             <a href="{{ path('personne_new') }}">
                 Create a new entry
             </a>
         </li>
+        <li>
+            <a href="{{ path('personne_import') }}">
+                Import a CSV list
+            </a>
+        </li>
     </ul>
-    {% endblock %}
+{% endblock %}
