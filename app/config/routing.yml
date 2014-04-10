@@ -1,0 +1,5 @@
+patrick_laxton_annuaire:
+    resource: "@PatrickLaxtonAnnuaireBundle/Controller/"
+    type:     annotation
+    prefix:   /
+
